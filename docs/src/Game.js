@@ -11,7 +11,7 @@ AddStyle(`
         margin: 0;
     }
 
-    orb-multiplayer{
+    game-core{
         display: flex;
         font-family: sans-serif;
         width: 100vw;
@@ -30,7 +30,7 @@ const fontSettings = {
   sizeAndFamily: "100px sans-serif"
 };
 
-export default class MultiplayerGame extends HTMLElement{
+export default class Game extends HTMLElement{
     constructor(){
         super();
         
@@ -43,15 +43,16 @@ export default class MultiplayerGame extends HTMLElement{
                 
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        
-        let gameMode = 'multiPlayer';
-        
+                
         this.gameState = new GameState();
         this.gameUpdate = this.gameUpdate.bind(this);
     }
     
-    // TODO: maybe specifiy single/multiplayer in a parameter here, then determine what happens based on that
-    startGame(){
+    // TODO: determine what happens based single player / multiplayer
+    startGame(gameMode){
+        
+        // TODO: for single player, set the local game state similar to how calls do in the server and return
+        // TODO: also base the updates on that
         let playerNum = 0;
         const socket = io();
         
@@ -227,4 +228,4 @@ export default class MultiplayerGame extends HTMLElement{
         return rightOverlap && leftOverlap && bottomOverlap && topOverlap;
     }
 }
-customElements.define('orb-multiplayer', MultiplayerGame);
+customElements.define('game-core', Game);

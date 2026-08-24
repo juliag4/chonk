@@ -75,11 +75,12 @@ io.on('connection', socket => {
         player.adjustView(canvasWidth, canvasHeight, gamestate.mapWidth, gamestate.mapHeight);
     });
     
-    socket.on('player-radius-update', (player) => {
-        if(gamestate.players[socket.id]){
-            gamestate.players[socket.id].targetRadius = player.radius;
-            gamestate.players[socket.id].radius = player.radius;
-        }
+    socket.on('player-radius-update', (playerInput) => {
+        const player = getPlayer(socket.id);
+        if(!player){ return; }
+        
+        player.targetRadius = playerInput.radius;
+        player.radius = playerInput.radius;
     });
     
     socket.on('food-update', (foodCollection) => {

@@ -1,8 +1,8 @@
 import {AddStyle} from './Styles.js';
-import MultiplayerGame from './MultiplayerGame.js';
+import Game from './Game.js';
 
 AddStyle(`
-    orb-root{
+    game-root{
         display: flex;
         width: 100vw;
         height: 100vh;
@@ -10,7 +10,7 @@ AddStyle(`
         font-family: sans-serif;
     }
 
-    orb-root .title-menu-view{
+    game-root .title-menu-view{
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -19,7 +19,7 @@ AddStyle(`
         height: 100%;
     }
 
-    orb-root .header{
+    game-root .header{
         display: flex;
         color: steelblue;
         font-size: 50px;
@@ -28,26 +28,26 @@ AddStyle(`
         top: 0;
     }
 
-    orb-root .input-button-container{
+    game-root .input-button-container{
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 40px;
     }
 
-    orb-root .input-button{
+    game-root .input-button{
         padding: 5px;
         border: 1px solid black;
         border-radius: 3px;
         font-size: 18px;
     }
 
-    orb-root .username{
+    game-root .username{
         display: flex;
         background-color: lightgrey;
     }
 
-    orb-root .single-player, orb-root .multiplayer{
+    game-root .single-player, game-root .multiplayer{
         display: flex;
         justify-content: center;
         width: 80%;
@@ -56,11 +56,11 @@ AddStyle(`
         cursor: pointer;
     }
 
-    orb-root .single-player:hover, .multiplayer:hover{
+    game-root .single-player:hover, game-root .multiplayer:hover{
         filter: brightness(0.7);
     }
 
-    orb-root .hidden{
+    game-root .hidden{
         display: none;
     }
 `);
@@ -78,29 +78,29 @@ class Root extends HTMLElement{
                 </div>
             </div>
         
-            <orb-multiplayer class="hidden"></orb-multiplayer>
+            <game-core class="hidden"></game-core>
         `;
         
         const titleMenuView = this.querySelector('.title-menu-view');
-        const multiPlayerGame = this.querySelector('orb-multiplayer');
+        const game = this.querySelector('game-core');
                         
         this.querySelector('.single-player').addEventListener('click', () => {
             titleMenuView.classList.add('hidden');
-            multiPlayerGame.classList.remove('hidden');
-            multiPlayerGame.startGame();
+            game.classList.remove('hidden');
+            game.startGame('single-player');
         });
         
         this.querySelector('.multiplayer').addEventListener('click', () => {
             titleMenuView.classList.add('hidden');
-            multiPlayerGame.classList.remove('hidden');
-            multiPlayerGame.startGame();
+            game.classList.remove('hidden');
+            game.startGame('multiplayer');
         });
         
         this.addEventListener('gameOver', () => {
            titleMenuView.classList.remove('hidden');
-           multiPlayerGame.classList.add('hidden');
+           game.classList.add('hidden');
            window.location.reload();
         });
     };
 };
-customElements.define('orb-root', Root);
+customElements.define('game-root', Root);
