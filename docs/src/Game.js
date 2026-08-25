@@ -1,10 +1,5 @@
 import {AddStyle} from './Styles.js';
-
 import GameState from './GameState.js';
-import Player from './Player.js';
-import FoodCollection from './FoodCollection.js';
-
-// TODO: remove player import if not needed
 
 AddStyle(`
     body{
@@ -45,14 +40,40 @@ export default class Game extends HTMLElement{
         this.canvas.height = window.innerHeight;
                 
         this.gameState = new GameState();
+
         this.gameUpdate = this.gameUpdate.bind(this);
     }
     
-    // TODO: determine what happens based single player / multiplayer
-    startGame(gameMode){
+    startSinglePlayerGame(){
+        this.gameState.playerId = '1';
         
-        // TODO: for single player, set the local game state similar to how calls do in the server and return
-        // TODO: also base the updates on that
+        this.gameState.addPlayer('1');
+        const playerName = document.querySelector('.username').value;
+        if(playerName.trim().length > 0){
+            this.gameState.players['1'].name = playerName.trim().substring(0, 15);
+        }
+        
+        const player = this.gameState.players['1'];
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            player.mouseX = e.clientX;
+            player.mouseY = e.clientY;
+            
+            player.calculateMoves(e.clientX, e.clientY);
+            player.calculateView(this.canvas.width, this.canvas.height);
+            player.adjustView(this.canvas.width, this.canvas.height, this.gameState.mapWidth, this.gameState.mapHeight);
+        });
+        
+        this.addEventListener('gameOver', () => {
+            this.gameState.deletePlayer('1');
+        });
+        
+        this.gameState.generateFoodCollection();
+        
+        requestAnimationFrame(this.gameUpdate);
+    }
+    
+    startMultiplayerGame(){
         let playerNum = 0;
         const socket = io();
         

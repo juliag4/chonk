@@ -87,13 +87,13 @@ class Root extends HTMLElement{
         this.querySelector('.single-player').addEventListener('click', () => {
             titleMenuView.classList.add('hidden');
             game.classList.remove('hidden');
-            game.startGame('single-player');
+            game.startSinglePlayerGame();
         });
         
         this.querySelector('.multiplayer').addEventListener('click', () => {
             titleMenuView.classList.add('hidden');
             game.classList.remove('hidden');
-            game.startGame('multiplayer');
+            game.startMultiplayerGame();
         });
         
         this.addEventListener('gameOver', () => {
