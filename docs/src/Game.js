@@ -114,6 +114,10 @@ export default class Game extends HTMLElement{
             socket.emit('food-update', this.gameState.foodCollection);
         });
         
+        this.addEventListener('deleteOpponent', (e) => {
+           socket.emit('delete-opponent', e.detail.id);
+        });
+        
         requestAnimationFrame(this.gameUpdate);
     }
     
@@ -161,7 +165,30 @@ export default class Game extends HTMLElement{
                 }
             }
             
-            // TODO: after checking collision with food, check collision with player
+            const playerArea = (Math.PI * (player.targetRadius * player.targetRadius));
+            
+            for(const [index, opponent] of Object.entries(this.gameState.players)){
+                if(opponent.id === this.gameState.playerId){ continue; }
+                
+                const opponentArea = (Math.PI * (opponent.targetRadius * opponent.targetRadius));
+                if(opponentArea * 1.25 <= playerArea && this.checkPlayerOverlap(opponent, player)){
+                    delete this.gameState.players[index];
+                    const deleteOpponentEvent = new CustomEvent('deleteOpponent', {
+                        bubbles: true,
+                        detail: { id: opponent.id }
+                    });
+                    this.dispatchEvent(deleteOpponentEvent);
+                    // TODO: fix this whole function
+                    // TODO: update the size of the player(s)
+                }
+                if(playerArea * 1.25 <= opponentArea && this.checkPlayerOverlap(player, opponent)){
+                    this.ctx.resetTransform();
+                    this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                    const gameOverEvent = new CustomEvent('gameOver', { bubbles: true });
+                    this.dispatchEvent(gameOverEvent);
+                    return;
+                }
+            }
             this.translateContext(player.view);
             this.redraw(this.gameState.players);
         }
@@ -246,6 +273,16 @@ export default class Game extends HTMLElement{
         const leftOverlap = food.x - food.radius >= player.x - player.radius;
         const bottomOverlap = food.y + food.radius <= player.y + player.radius;
         const topOverlap = food.y - food.radius >= player.y - player.radius;
+        return rightOverlap && leftOverlap && bottomOverlap && topOverlap;
+    }
+    
+    // checks if smaller player is entirely within larger player's boundaries
+    // returns true if smaller player is consumed, false otherwise
+    checkPlayerOverlap(smallerPlayer, largerPlayer){
+        const rightOverlap = smallerPlayer.x + smallerPlayer.radius <= largerPlayer.x + largerPlayer.radius;
+        const leftOverlap = smallerPlayer.x - smallerPlayer.radius >= largerPlayer.x - largerPlayer.radius;
+        const bottomOverlap = smallerPlayer.y + smallerPlayer.radius <= largerPlayer.y + largerPlayer.radius;
+        const topOverlap = smallerPlayer.y - smallerPlayer.radius >= largerPlayer.y - largerPlayer.radius;
         return rightOverlap && leftOverlap && bottomOverlap && topOverlap;
     }
 }

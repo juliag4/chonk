@@ -84,7 +84,11 @@ io.on('connection', socket => {
     });
     
     socket.on('food-update', (foodCollection) => {
-       gamestate.foodCollection = foodCollection;
+        gamestate.foodCollection = foodCollection;
+    });
+    
+    socket.on('delete-opponent', (id) => {
+        gamestate.deletePlayer(id);
     });
 
     socket.on('game-over', () => {
