@@ -25,6 +25,9 @@ const fontSettings = {
   sizeAndFamily: "100px sans-serif"
 };
 
+const ascendingPlayerIds = [];
+const playerStates = [];
+
 export default class Game extends HTMLElement{
     constructor(){
         super();
@@ -106,8 +109,8 @@ export default class Game extends HTMLElement{
             socket.emit('game-over');
         });
         
-        this.addEventListener('playerRadiusUpdate', () => {
-            socket.emit('player-radius-update', this.gameState.players[this.gameState.playerId]);
+        this.addEventListener('playerRadiusUpdate', (e) => {
+            socket.emit('player-radius-update', this.gameState.players[e.detail.id], e.detail.id);
         });
         
         this.addEventListener('foodUpdate', () => {
@@ -115,18 +118,34 @@ export default class Game extends HTMLElement{
         });
         
         this.addEventListener('deleteOpponent', (e) => {
-           socket.emit('delete-opponent', e.detail.id);
+            socket.emit('delete-opponent', e.detail.id);
         });
         
         requestAnimationFrame(this.gameUpdate);
-    }
-    
-    // checks this.gameState.players[this.gameState.playerId] is within the bounds of the map
-    // if player isn't, then the main page reloads
+    };
+        
     gameUpdate(currentTime){
-        const isNotEmpty = Object.keys(this.gameState.players).length > 0;
+        ascendingPlayerIds.length = 0;
+        playerStates.length = 0;
+        
+        const players = this.gameState.players;
+        for(const id in players){
+            if(Object.hasOwn(players, id)){
+                ascendingPlayerIds.push(id);
+                playerStates.push(true);
+            }
+        }
+        ascendingPlayerIds.sort((id1, id2) => {
+            return players[id1].radius - players[id2].radius;
+        });
+        
+        const isNotEmpty = Object.keys(players).length > 0;
         if(isNotEmpty && this.gameState.playerId){
             const player = this.gameState.players[this.gameState.playerId];
+            if(!player){
+                this.finishGame();
+                return;
+            }
             
             const hasCrossedRight = player.x > (this.gameState.mapWidth - this.gameState.borderThickness) - player.radius;
             const hasCrossedLeft = player.x < this.gameState.borderThickness + player.radius;
@@ -135,10 +154,7 @@ export default class Game extends HTMLElement{
             
             const playerDead = hasCrossedRight || hasCrossedLeft || hasCrossedBottom || hasCrossedTop;
             if(playerDead){
-                this.ctx.resetTransform();
-                this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-                const gameOverEvent = new CustomEvent('gameOver', { bubbles: true });
-                this.dispatchEvent(gameOverEvent);
+                this.finishGame();
                 return;
             }
             
@@ -152,45 +168,42 @@ export default class Game extends HTMLElement{
                     this.gameState.foodCollection.foods[index].isConsumed = true;
                     // Dispatches event so the food collection in server is updated
                     this.dispatchEvent(new Event('foodUpdate', { bubbles: true }));
-                    
-                    const newPlayerArea = (Math.PI * (player.targetRadius * player.targetRadius)) + food.area;
-                    const newPlayerRadius = Math.sqrt(newPlayerArea / Math.PI);
-                    
-                    if(player.targetRadius !== newPlayerRadius){
-                        player.targetRadius = newPlayerRadius;
-                        player.radius = Math.round(newPlayerRadius);
-                        // Dispatches event so the the player's target radius and radius in server are updated
-                        this.dispatchEvent(new Event('playerRadiusUpdate', { bubbles: true }));
-                    }
+                    // Calculates new player area and then updates player radius if changed
+                    this.updatePlayerRadius(player, food.area);
                 }
             }
             
             const playerArea = (Math.PI * (player.targetRadius * player.targetRadius));
             
-            for(const [index, opponent] of Object.entries(this.gameState.players)){
+            for(let index = 0; index < ascendingPlayerIds.length; index++){
+                // Remove this check if unneeded
+                if(!playerStates[index]){ continue; }
+                
+                const currentId = ascendingPlayerIds[index];
+                const opponent = this.gameState.players[currentId];
                 if(opponent.id === this.gameState.playerId){ continue; }
                 
                 const opponentArea = (Math.PI * (opponent.targetRadius * opponent.targetRadius));
-                if(opponentArea * 1.25 <= playerArea && this.checkPlayerOverlap(opponent, player)){
-                    delete this.gameState.players[index];
+                // Figure out how to update player radius when opponent runs into players if not already
+                if(opponentArea * 1.25 <= playerArea && this.checkFullPlayerOverlap(opponent, player)){
+                    this.updatePlayerRadius(player, opponentArea);
+
+                    delete this.gameState.players[currentId];
+                    playerStates[index] = false;
+                    
                     const deleteOpponentEvent = new CustomEvent('deleteOpponent', {
                         bubbles: true,
                         detail: { id: opponent.id }
                     });
                     this.dispatchEvent(deleteOpponentEvent);
-                    // TODO: fix this whole function
-                    // TODO: update the size of the player(s)
                 }
-                if(playerArea * 1.25 <= opponentArea && this.checkPlayerOverlap(player, opponent)){
-                    this.ctx.resetTransform();
-                    this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-                    const gameOverEvent = new CustomEvent('gameOver', { bubbles: true });
-                    this.dispatchEvent(gameOverEvent);
+                if(playerArea * 1.25 <= opponentArea && this.checkFullPlayerOverlap(player, opponent)){
+                    this.finishGame();
                     return;
                 }
             }
             this.translateContext(player.view);
-            this.redraw(this.gameState.players);
+            this.redraw();
         }
 
         requestAnimationFrame(this.gameUpdate);
@@ -209,7 +222,7 @@ export default class Game extends HTMLElement{
         this.ctx.translate(-view.x, -view.y);
     }
     
-    redraw(players){
+    redraw(){
         // Aligning the text
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
@@ -235,7 +248,13 @@ export default class Game extends HTMLElement{
             this.ctx.closePath();
         }
         
-        for(const [key, player] of Object.entries(players)){
+        // Draws players from smallest radius to largest so larger players appear on top of smaller players
+        for(let i = 0; i < ascendingPlayerIds.length; i++){
+            if(!playerStates[i]){ continue; }
+            
+            const currentId = ascendingPlayerIds[i];
+            const player = this.gameState.players[currentId];
+
             // Styling of the player circle itself
             this.ctx.beginPath();
             this.ctx.arc(player.x, player.y, player.radius, 0, 2 * Math.PI);
@@ -278,12 +297,37 @@ export default class Game extends HTMLElement{
     
     // checks if smaller player is entirely within larger player's boundaries
     // returns true if smaller player is consumed, false otherwise
-    checkPlayerOverlap(smallerPlayer, largerPlayer){
+    checkFullPlayerOverlap(smallerPlayer, largerPlayer){
         const rightOverlap = smallerPlayer.x + smallerPlayer.radius <= largerPlayer.x + largerPlayer.radius;
         const leftOverlap = smallerPlayer.x - smallerPlayer.radius >= largerPlayer.x - largerPlayer.radius;
         const bottomOverlap = smallerPlayer.y + smallerPlayer.radius <= largerPlayer.y + largerPlayer.radius;
         const topOverlap = smallerPlayer.y - smallerPlayer.radius >= largerPlayer.y - largerPlayer.radius;
         return rightOverlap && leftOverlap && bottomOverlap && topOverlap;
+    }
+    
+    // increase player area size by specified amount and then adjust player radius accordingly
+    updatePlayerRadius(player, area){
+        const newPlayerArea = (Math.PI * (player.targetRadius * player.targetRadius)) + area;
+        const newPlayerRadius = Math.sqrt(newPlayerArea / Math.PI);
+        
+        if(player.targetRadius !== newPlayerRadius){
+            player.targetRadius = newPlayerRadius;
+            player.radius = Math.round(newPlayerRadius);
+            // Dispatches event so the the player's target radius and radius in server are updated
+            const playerRadiusEvent = new CustomEvent('playerRadiusUpdate', {
+                bubbles: true,
+                detail: { id: player.id }
+            });
+            this.dispatchEvent(playerRadiusEvent);
+        }
+    }
+    
+    // ends the player's game and takes them back to the starting page
+    finishGame(player){
+        this.ctx.resetTransform();
+        this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        const gameOverEvent = new CustomEvent('gameOver', { bubbles: true });
+        this.dispatchEvent(gameOverEvent);
     }
 }
 customElements.define('game-core', Game);

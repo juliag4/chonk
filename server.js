@@ -75,8 +75,8 @@ io.on('connection', socket => {
         player.adjustView(canvasWidth, canvasHeight, gamestate.mapWidth, gamestate.mapHeight);
     });
     
-    socket.on('player-radius-update', (playerInput) => {
-        const player = getPlayer(socket.id);
+    socket.on('player-radius-update', (playerInput, id) => {
+        const player = getPlayer(id);
         if(!player){ return; }
         
         player.targetRadius = playerInput.radius;
