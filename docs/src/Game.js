@@ -117,8 +117,8 @@ export default class Game extends HTMLElement{
             socket.emit('food-update', this.gameState.foodCollection);
         });
         
-        this.addEventListener('deleteOpponent', (e) => {
-            socket.emit('delete-opponent', e.detail.id);
+        this.addEventListener('fullPlayerOverlap', (e) => {
+            socket.emit('collision-update', e.detail.largePlayerId, e.detail.smallPlayerId, e.detail.smallPlayerArea);
         });
         
         requestAnimationFrame(this.gameUpdate);
@@ -186,18 +186,23 @@ export default class Game extends HTMLElement{
                 const opponentArea = (Math.PI * (opponent.targetRadius * opponent.targetRadius));
                 // Figure out how to update player radius when opponent runs into players if not already
                 if(opponentArea * 1.25 <= playerArea && this.checkFullPlayerOverlap(opponent, player)){
-                    this.updatePlayerRadius(player, opponentArea);
-
                     delete this.gameState.players[currentId];
                     playerStates[index] = false;
                     
-                    const deleteOpponentEvent = new CustomEvent('deleteOpponent', {
+                    // Processes to the server so everything gets updated exactly once
+                    const fullPlayerOverlapEvent = new CustomEvent('fullPlayerOverlap', {
                         bubbles: true,
-                        detail: { id: opponent.id }
+                        detail: { largePlayerId: this.gameState.playerId, smallPlayerId: currentId, smallPlayerArea: opponentArea }
                     });
-                    this.dispatchEvent(deleteOpponentEvent);
+                    this.dispatchEvent(fullPlayerOverlapEvent);
                 }
                 if(playerArea * 1.25 <= opponentArea && this.checkFullPlayerOverlap(player, opponent)){
+                    // Processes to the server so everything gets updated exactly once
+                    const fullPlayerOverlapEvent = new CustomEvent('fullPlayerOverlap', {
+                        bubbles: true,
+                        detail: { largePlayerId: currentId, smallPlayerId: this.gameState.playerId, smallPlayerArea: playerArea }
+                    });
+                    this.dispatchEvent(fullPlayerOverlapEvent);
                     this.finishGame();
                     return;
                 }

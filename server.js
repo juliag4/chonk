@@ -87,8 +87,21 @@ io.on('connection', socket => {
         gamestate.foodCollection = foodCollection;
     });
     
-    socket.on('delete-opponent', (id) => {
-        gamestate.deletePlayer(id);
+    socket.on('collision-update', (largePlayerId, smallPlayerId, smallPlayerArea) => {
+        if(!getPlayer(smallPlayerId)){ return; }
+        
+        // if the smaller player hasn't been deleted, delete it and update the larger player's radius
+        gamestate.deletePlayer(smallPlayerId);
+        
+        const player = getPlayer(largePlayerId);
+        
+        const newPlayerArea = (Math.PI * (player.targetRadius * player.targetRadius)) + smallPlayerArea;
+        const newPlayerRadius = Math.sqrt(newPlayerArea / Math.PI);
+        
+        if(player.targetRadius !== newPlayerRadius){
+            player.targetRadius = newPlayerRadius;
+            player.radius = Math.round(newPlayerRadius);
+        }
     });
 
     socket.on('game-over', () => {
