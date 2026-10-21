@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/juliag4/orbbites.git"
+    "url": "git+https://github.com/juliag4/chonk.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/juliag4/orbbites/issues"
+    "url": "https://github.com/juliag4/chonk/issues"
   },
-  "homepage": "https://github.com/juliag4/orbbites#readme",
+  "homepage": "https://github.com/juliag4/chonk#readme",
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
