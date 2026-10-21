@@ -14,7 +14,7 @@ const io = new Server(server);
 app.use(express.static(path.join(import.meta.dirname, 'docs')));
 
 // Start server
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 
 let gamestate = new GameState();
 gamestate.generateFoodCollection();
