@@ -28,6 +28,8 @@ const fontSettings = {
 const ascendingPlayerIds = [];
 const playerStates = [];
 
+let socket;
+
 export default class Game extends HTMLElement{
     constructor(){
         super();
@@ -83,7 +85,7 @@ export default class Game extends HTMLElement{
             console.log("Socket already exists");
             return;
         }
-        const socket = io({
+        socket = io({
             transports: ["websocket"] 
         });
         console.log('Starting multiplayer game');
