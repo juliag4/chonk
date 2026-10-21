@@ -79,6 +79,7 @@ export default class Game extends HTMLElement{
     startMultiplayerGame(){
         let playerNum = 0;
         const socket = io();
+        console.log('Starting multiplayer game');
         
         // Get your player number
         socket.on('player-number', num => {
