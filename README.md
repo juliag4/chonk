@@ -1,3 +1,3 @@
-# Orb Frenzy
+# Chonk Online
 
-Inspired by  Agar.io, Slither.io. Created with HTML, CSS, JS. Unfinished game.
+Inspired by Agar.io. Created with HTML, CSS, JS. Game still in development.
