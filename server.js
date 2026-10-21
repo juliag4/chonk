@@ -105,11 +105,25 @@ io.on('connection', socket => {
     });
 
     socket.on('game-over', () => {
+        if(!connections[playerIndex]){ return; }
+        
+        console.log(`Removing player ${playerIndex}`);
+        connections[playerIndex] = null;
         gamestate.deletePlayer(socket.id);
+        
+        const allNull = connections.every(element => element === null);
+        if(allNull){ gamestate.generateFoodCollection(); }
     });
     
     socket.on('disconnect', () => {
+        if(!connections[playerIndex]){ return; }
+        
+        console.log(`Removing player ${playerIndex}`);
+        connections[playerIndex] = null;
         gamestate.deletePlayer(socket.id);
+        
+        const allNull = connections.every(element => element === null);
+        if(allNull){ gamestate.generateFoodCollection(); }
     });
     
     setInterval(() => {

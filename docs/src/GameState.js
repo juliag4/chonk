@@ -63,6 +63,7 @@ export default class GameState{
     }
         
     generateFoodCollection(){
+        this.foodCollection = new FoodCollection();
         for(let i = 0; i < this.initialFoodCount; i++){
             const positionMultiplier = (this.mapWidth - this.foodRadius - this.borderThickness) - this.foodRadius - this.borderThickness;
             const xPos = Math.floor(Math.random() * (positionMultiplier)) + this.foodRadius + this.borderThickness;
