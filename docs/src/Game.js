@@ -78,6 +78,11 @@ export default class Game extends HTMLElement{
     
     startMultiplayerGame(){
         let playerNum = 0;
+        
+        if(socket && socket.connected) {
+            console.log("Socket already exists");
+            return;
+        }
         const socket = io({
             transports: ["websocket"] 
         });
