@@ -1,7 +1,7 @@
 {
-  "name": "circles",
-  "version": "1.0.0",
-  "description": "Multiplayer orb game.",
+  "name": "chonk",
+  "version": "0.0.1",
+  "description": "multiplayer circle game",
   "type": "module",
   "main": "server.js",
   "scripts": {
