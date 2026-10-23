@@ -39,19 +39,27 @@ io.on('connection', socket => {
     
     if(playerIndex === -1){ return; }
     
+    
+    
     // Tell client what player number has connected
-    socket.emit('player-number', playerIndex);
-    console.log(`Player ${playerIndex} has connected`);
+//    socket.emit('player-number', playerIndex);
+//    console.log(`Player ${playerIndex} has connected`);
     
     connections[playerIndex] = true;
     
-    socket.on('join', () => {
+    socket.on('join', (playerName) => {
         socket.join('Room 1');
         console.log(`Adding player ${playerIndex}`);
         gamestate.addPlayer(socket.id);
+        
+        const player = getPlayer(socket.id);
+        if(playerName.trim().length > 0){
+            // Ensures player's name doesn't exceed 15 characters
+            player.name = playerName.trim().substring(0, 15);
+        }
     });
     
-    socket.on('player-name', (playerName) => {
+    /*socket.on('player-name', (playerName) => {
         const player = getPlayer(socket.id);
         if(!player) { return; }
         
@@ -59,7 +67,7 @@ io.on('connection', socket => {
             // Ensures player's name doesn't exceed 15 characters
             player.name = playerName.trim().substring(0, 15);
         }
-    });
+    });*/
     
     socket.on('mouse-move', (mouseX, mouseY, canvasWidth, canvasHeight) => {
         const player = getPlayer(socket.id);

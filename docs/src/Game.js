@@ -28,7 +28,9 @@ const fontSettings = {
 const ascendingPlayerIds = [];
 const playerStates = [];
 
-let socket;
+const socket = io({
+  transports: ["websocket"]
+});
 
 export default class Game extends HTMLElement{
     constructor(){
@@ -81,17 +83,22 @@ export default class Game extends HTMLElement{
     startMultiplayerGame(){
         let playerNum = 0;
         
-        if(socket && socket.connected) {
+        /*if(socket && socket.connected) {
             console.log("Socket already exists");
             return;
         }
         socket = io({
             transports: ["websocket"] 
-        });
+        });*/
         console.log('Starting multiplayer game');
+                
+        socket.emit('join', document.querySelector('.username').value);
+        
+        //socket.emit('player-name', document.querySelector('.username').value);
+
         
         // Get your player number
-        socket.on('player-number', num => {
+        /*socket.on('player-number', num => {
             console.log('player-number socket');
             if(num === -1){
                 console.log('Sorry the server is full');
@@ -102,7 +109,7 @@ export default class Game extends HTMLElement{
                 
                 socket.emit('player-name', document.querySelector('.username').value);
             }
-        });
+        });*/
                 
         socket.on('state', ({players, food, id}) => {
             this.gameState.playerId = String(id);
