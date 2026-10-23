@@ -8,7 +8,15 @@ import GameState from './docs/src/GameState.js';
 const PORT = process.env.PORT || 3000;
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
+
+const io = new Server(server, {
+    transports: ['websocket'],
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    cors: {
+    origin: "*",
+    }
+});
 
 // Set static folder
 app.use(express.static(path.join(import.meta.dirname, 'docs')));
