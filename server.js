@@ -131,7 +131,9 @@ io.on('connection', socket => {
         if(allNull){ gamestate.generateFoodCollection(); }
     });
     
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
+        console.log(`Tab Killed: ${socket.id} | Reason: ${reason}`);
+        
         if(!connections[playerIndex]){ return; }
         
         console.log(`Removing player ${playerIndex}`);
