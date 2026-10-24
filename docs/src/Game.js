@@ -32,6 +32,8 @@ const socket = io({
   transports: ["websocket"]
 });
 
+let gameController = null;
+
 export default class Game extends HTMLElement{
     constructor(){
         super();
@@ -52,6 +54,7 @@ export default class Game extends HTMLElement{
     }
     
     startSinglePlayerGame(){
+        // TODO: remove event listeners
         this.gameState.playerId = '1';
         
         this.gameState.addPlayer('1');
@@ -81,6 +84,11 @@ export default class Game extends HTMLElement{
     }
     
     startMultiplayerGame(){
+        if(gameController){ gameController.abort(); }
+            
+        gameController = new AbortController();
+        const { signal } = gameController;
+        
         let playerNum = 0;
         
         /*if(socket && socket.connected) {
@@ -110,6 +118,7 @@ export default class Game extends HTMLElement{
                 socket.emit('player-name', document.querySelector('.username').value);
             }
         });*/
+        socket.off('state');
                 
         socket.on('state', ({players, food, id}) => {
             this.gameState.playerId = String(id);
@@ -120,23 +129,23 @@ export default class Game extends HTMLElement{
         
         this.canvas.addEventListener('mousemove', (e) => {
             socket.emit('mouse-move', e.clientX, e.clientY, this.canvas.width, this.canvas.height);
-        });
+        }, { signal });
         
         this.addEventListener('gameOver', () => {
             socket.emit('game-over');
-        });
+        }, { signal });
         
         this.addEventListener('playerRadiusUpdate', (e) => {
             socket.emit('player-radius-update', this.gameState.players[e.detail.id], e.detail.id);
-        });
+        }, { signal });
         
         this.addEventListener('foodUpdate', () => {
             socket.emit('food-update', this.gameState.foodCollection);
-        });
+        }, { signal });
         
         this.addEventListener('fullPlayerOverlap', (e) => {
             socket.emit('collision-update', e.detail.largePlayerId, e.detail.smallPlayerId, e.detail.smallPlayerArea);
-        });
+        }, { signal });
         
         requestAnimationFrame(this.gameUpdate);
     };
@@ -160,7 +169,7 @@ export default class Game extends HTMLElement{
         if(isNotEmpty && this.gameState.playerId){
             const player = this.gameState.players[this.gameState.playerId];
             if(!player){
-                this.finishGame();
+                this.finishGame(player);
                 return;
             }
             
@@ -171,7 +180,7 @@ export default class Game extends HTMLElement{
             
             const playerDead = hasCrossedRight || hasCrossedLeft || hasCrossedBottom || hasCrossedTop;
             if(playerDead){
-                this.finishGame();
+                this.finishGame(player);
                 return;
             }
             
@@ -220,7 +229,7 @@ export default class Game extends HTMLElement{
                         detail: { largePlayerId: currentId, smallPlayerId: this.gameState.playerId, smallPlayerArea: playerArea }
                     });
                     this.dispatchEvent(fullPlayerOverlapEvent);
-                    this.finishGame();
+                    this.finishGame(player);
                     return;
                 }
             }
@@ -346,6 +355,13 @@ export default class Game extends HTMLElement{
     
     // ends the player's game and takes them back to the starting page
     finishGame(player){
+        player.maxSpeed = 3;
+        player.view = {x: 0, y: 0};
+        
+        if(gameController) {
+            gameController.abort();
+            gameController = null;
+        }
         this.ctx.resetTransform();
         this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
         const gameOverEvent = new CustomEvent('gameOver', { bubbles: true });

@@ -90,7 +90,8 @@ class Root extends HTMLElement{
             game.startSinglePlayerGame();
         });
         
-        this.querySelector('.multiplayer').addEventListener('click', () => {
+        this.querySelector('.multiplayer').addEventListener('click', (e) => {
+            e.preventDefault();
             titleMenuView.classList.add('hidden');
             game.classList.remove('hidden');
             game.startMultiplayerGame();
@@ -99,7 +100,7 @@ class Root extends HTMLElement{
         this.addEventListener('gameOver', () => {
            titleMenuView.classList.remove('hidden');
            game.classList.add('hidden');
-           window.location.reload();
+           //window.location.reload();
         });
     };
 };
