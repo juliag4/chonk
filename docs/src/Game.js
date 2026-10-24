@@ -45,9 +45,6 @@ export default class Game extends HTMLElement{
         this.canvas = this.querySelector('canvas');
         this.ctx = this.canvas.getContext('2d');
                 
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-                
         this.gameState = new GameState();
 
         this.gameUpdate = this.gameUpdate.bind(this);
@@ -88,6 +85,10 @@ export default class Game extends HTMLElement{
             
         gameController = new AbortController();
         const { signal } = gameController;
+        
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         let playerNum = 0;
         
