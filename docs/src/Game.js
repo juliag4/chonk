@@ -160,89 +160,92 @@ export default class Game extends HTMLElement{
             return;
         }
         
-        const players = this.gameState.players;
-        console.log("Players in memory on this tab:", Object.keys(this.gameState.players).length);
-    
-        for(const id in players){
-            if(Object.hasOwn(players, id)){
-                ascendingPlayerIds.push(id);
-                playerStates.push(true);
-            }
-        }
-        ascendingPlayerIds.sort((id1, id2) => {
-            return players[id1].radius - players[id2].radius;
-        });
-        
-        const isNotEmpty = Object.keys(players).length > 0;
-        if(isNotEmpty && this.gameState.playerId){
-            const player = this.gameState.players[this.gameState.playerId];
-            if(!player){
-                this.finishGame(player);
-                return;
-            }
+        try{
+            const players = this.gameState.players;
             
-            const hasCrossedRight = player.x > (this.gameState.mapWidth - this.gameState.borderThickness) - player.radius;
-            const hasCrossedLeft = player.x < this.gameState.borderThickness + player.radius;
-            const hasCrossedBottom = player.y > (this.gameState.mapHeight - this.gameState.borderThickness) - player.radius;
-            const hasCrossedTop = player.y < this.gameState.borderThickness + player.radius;
-            
-            const playerDead = hasCrossedRight || hasCrossedLeft || hasCrossedBottom || hasCrossedTop;
-            if(playerDead){
-                this.finishGame(player);
-                return;
-            }
-            
-            for(const [index, food] of this.gameState.foodCollection.foods.entries()){
-                // Don't do anything if food has already been eaten by player
-                if(food.isConsumed){ continue; }
-                // Checks full overlap between player and food to determine if player eats food
-                const foodIsConsumed = this.checkFullOverlap(player, food);
-                
-                if(foodIsConsumed){
-                    this.gameState.foodCollection.foods[index].isConsumed = true;
-                    // Dispatches event so the food collection in server is updated
-                    this.dispatchEvent(new Event('foodUpdate', { bubbles: true }));
-                    // Calculates new player area and then updates player radius if changed
-                    this.updatePlayerRadius(player, food.area);
+            for(const id in players){
+                if(Object.hasOwn(players, id)){
+                    ascendingPlayerIds.push(id);
+                    playerStates.push(true);
                 }
             }
+            ascendingPlayerIds.sort((id1, id2) => {
+                return players[id1].radius - players[id2].radius;
+            });
             
-            const playerArea = (Math.PI * (player.targetRadius * player.targetRadius));
-            
-            for(let index = 0; index < ascendingPlayerIds.length; index++){
-                // Remove this check if unneeded
-                if(!playerStates[index]){ continue; }
-                
-                const currentId = ascendingPlayerIds[index];
-                const opponent = this.gameState.players[currentId];
-                if(opponent.id === this.gameState.playerId){ continue; }
-                
-                const opponentArea = (Math.PI * (opponent.targetRadius * opponent.targetRadius));
-                // Figure out how to update player radius when opponent runs into players if not already
-                if(opponentArea * 1.25 <= playerArea && this.checkFullPlayerOverlap(opponent, player)){
-                    delete this.gameState.players[currentId];
-                    playerStates[index] = false;
-                    
-                    // Processes to the server so everything gets updated exactly once
-                    const fullPlayerOverlapEvent = new CustomEvent('fullPlayerOverlap', {
-                        bubbles: true,
-                        detail: { largePlayerId: this.gameState.playerId, smallPlayerId: currentId, smallPlayerArea: opponentArea }
-                    });
-                    this.dispatchEvent(fullPlayerOverlapEvent);
-                }
-                if(playerArea * 1.25 <= opponentArea && this.checkFullPlayerOverlap(player, opponent)){
-                    // Processes to the server so everything gets updated exactly once
-                    const fullPlayerOverlapEvent = new CustomEvent('fullPlayerOverlap', {
-                        bubbles: true,
-                        detail: { largePlayerId: currentId, smallPlayerId: this.gameState.playerId, smallPlayerArea: playerArea }
-                    });
-                    this.dispatchEvent(fullPlayerOverlapEvent);
+            const isNotEmpty = Object.keys(players).length > 0;
+            if(isNotEmpty && this.gameState.playerId){
+                const player = this.gameState.players[this.gameState.playerId];
+                if(!player){
                     this.finishGame(player);
                     return;
                 }
+                
+                const hasCrossedRight = player.x > (this.gameState.mapWidth - this.gameState.borderThickness) - player.radius;
+                const hasCrossedLeft = player.x < this.gameState.borderThickness + player.radius;
+                const hasCrossedBottom = player.y > (this.gameState.mapHeight - this.gameState.borderThickness) - player.radius;
+                const hasCrossedTop = player.y < this.gameState.borderThickness + player.radius;
+                
+                const playerDead = hasCrossedRight || hasCrossedLeft || hasCrossedBottom || hasCrossedTop;
+                if(playerDead){
+                    this.finishGame(player);
+                    return;
+                }
+                
+                for(const [index, food] of this.gameState.foodCollection.foods.entries()){
+                    // Don't do anything if food has already been eaten by player
+                    if(food.isConsumed){ continue; }
+                    // Checks full overlap between player and food to determine if player eats food
+                    const foodIsConsumed = this.checkFullOverlap(player, food);
+                    
+                    if(foodIsConsumed){
+                        this.gameState.foodCollection.foods[index].isConsumed = true;
+                        // Dispatches event so the food collection in server is updated
+                        this.dispatchEvent(new Event('foodUpdate', { bubbles: true }));
+                        // Calculates new player area and then updates player radius if changed
+                        this.updatePlayerRadius(player, food.area);
+                    }
+                }
+                
+                const playerArea = (Math.PI * (player.targetRadius * player.targetRadius));
+                
+                for(let index = 0; index < ascendingPlayerIds.length; index++){
+                    // Remove this check if unneeded
+                    if(!playerStates[index]){ continue; }
+                    
+                    const currentId = ascendingPlayerIds[index];
+                    const opponent = this.gameState.players[currentId];
+                    if(opponent.id === this.gameState.playerId){ continue; }
+                    
+                    const opponentArea = (Math.PI * (opponent.targetRadius * opponent.targetRadius));
+                    // Figure out how to update player radius when opponent runs into players if not already
+                    if(opponentArea * 1.25 <= playerArea && this.checkFullPlayerOverlap(opponent, player)){
+                        delete this.gameState.players[currentId];
+                        playerStates[index] = false;
+                        
+                        // Processes to the server so everything gets updated exactly once
+                        const fullPlayerOverlapEvent = new CustomEvent('fullPlayerOverlap', {
+                            bubbles: true,
+                            detail: { largePlayerId: this.gameState.playerId, smallPlayerId: currentId, smallPlayerArea: opponentArea }
+                        });
+                        this.dispatchEvent(fullPlayerOverlapEvent);
+                    }
+                    if(playerArea * 1.25 <= opponentArea && this.checkFullPlayerOverlap(player, opponent)){
+                        // Processes to the server so everything gets updated exactly once
+                        const fullPlayerOverlapEvent = new CustomEvent('fullPlayerOverlap', {
+                            bubbles: true,
+                            detail: { largePlayerId: currentId, smallPlayerId: this.gameState.playerId, smallPlayerArea: playerArea }
+                        });
+                        this.dispatchEvent(fullPlayerOverlapEvent);
+                        this.finishGame(player);
+                        return;
+                    }
+                }
+                this.translateContext(player.view);
+                this.redraw();
             }
-            this.translateContext(player.view);
-            this.redraw();
+        }catch (error) {
+            console.error("Game loop encountered an error, but kept running:", error);
         }
 
         requestAnimationFrame(this.gameUpdate);
