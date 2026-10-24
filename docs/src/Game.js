@@ -156,6 +156,7 @@ export default class Game extends HTMLElement{
         playerStates.length = 0;
         
         const players = this.gameState.players;
+        console.log("Players in memory on this tab:", Object.keys(this.gameState.players).length);
         for(const id in players){
             if(Object.hasOwn(players, id)){
                 ascendingPlayerIds.push(id);
