@@ -120,10 +120,15 @@ export default class Game extends HTMLElement{
             }
         });*/
         socket.off('state');
+        socket.off('player-id');
                 
-        socket.on('state', ({players, food, id}) => {
-            this.gameState.playerId = String(id);
+        socket.on('state', ({players, food}) => {
             this.gameState.updateState(players, food);
+        });
+        
+        socket.on('player-id', ({id}) => {
+            console.log('got the player id');
+            this.gameState.playerId = String(id);
         });
                 
         // Event listeners that will emit events so the gamestate object in the server is updated

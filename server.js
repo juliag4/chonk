@@ -38,6 +38,16 @@ const isInvalidNumber = (val) => typeof val !== 'number' || !isFinite(val);
 // Handle a socket connection request from web client
 const connections = [null, null, null, null, null, null, null, null, null, null];
 
+let serverGameLoop = null;
+function startServerInterval() {
+    if(serverGameLoop === null) {
+        console.log('Starting the global game loop...');
+        serverGameLoop = setInterval(() => {
+            io.emit('state', {players: gamestate.players, food: gamestate.foodCollection});
+        }, 50);
+    }
+}
+
 io.on('connection', socket => {
     // Find an available player number
     let playerIndex = -1;
@@ -50,10 +60,10 @@ io.on('connection', socket => {
     
     if(playerIndex === -1){ return; }
     
+    startServerInterval();
     
-    
-    // Tell client what player number has connected
-//    socket.emit('player-number', playerIndex);
+//   Tell client what player number has connected
+//   socket.emit('player-number', playerIndex);
 //    console.log(`Player ${playerIndex} has connected`);
     
     connections[playerIndex] = true;
@@ -68,7 +78,9 @@ io.on('connection', socket => {
             // Ensures player's name doesn't exceed 15 characters
             player.name = playerName.trim().substring(0, 15);
         }
+        socket.emit('player-id', {id: socket.id});
     });
+    
     
     /*socket.on('player-name', (playerName) => {
         const player = getPlayer(socket.id);
@@ -130,6 +142,12 @@ io.on('connection', socket => {
         connections[playerIndex] = null;
         gamestate.deletePlayer(socket.id);
         
+        if(Object.keys(gamestate.players).length === 0 && serverGameLoop !== null) {
+            console.log("No players left. Putting game loop to sleep.");
+            clearInterval(serverGameLoop);
+            serverGameLoop = null;
+        }
+        
         const allNull = connections.every(element => element === null);
         if(allNull){ gamestate.generateFoodCollection(); }
     });
@@ -143,11 +161,17 @@ io.on('connection', socket => {
         connections[playerIndex] = null;
         gamestate.deletePlayer(socket.id);
         
+        if(Object.keys(gamestate.players).length === 0 && serverGameLoop !== null) {
+            console.log("No players left. Putting game loop to sleep.");
+            clearInterval(serverGameLoop);
+            serverGameLoop = null;
+        }
+        
         const allNull = connections.every(element => element === null);
         if(allNull){ gamestate.generateFoodCollection(); }
     });
-    
-    setInterval(() => {
+        
+    /*setInterval(() => {
         socket.emit('state', {players: gamestate.players, food: gamestate.foodCollection, id: socket.id});
-    }, 50);
+    }, 50);*/
 });
