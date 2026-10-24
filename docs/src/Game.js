@@ -29,9 +29,7 @@ const ascendingPlayerIds = [];
 const playerStates = [];
 
 const socket = io({
-    transports: ["polling", "websocket"],
-    upgrade: true,
-    rememberUpgrade: true
+    transports: ['websocket']
 });
 
 let gameController = null;

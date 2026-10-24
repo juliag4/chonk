@@ -14,8 +14,11 @@ const io = new Server(server, {
     pingTimeout: 60000,
     pingInterval: 25000,
     cors: {
-    origin: "*",
+        origin: "https://chonk-online.onrender.com",
+        methods: ["GET", "POST"],
+        credentials: true
     }
+    allowEIO3: true
 });
 
 // Set static folder
