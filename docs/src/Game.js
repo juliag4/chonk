@@ -355,8 +355,10 @@ export default class Game extends HTMLElement{
     
     // ends the player's game and takes them back to the starting page
     finishGame(player){
-        player.maxSpeed = 3;
-        player.view = {x: 0, y: 0};
+        if(player){
+            player.maxSpeed = 3;
+            player.view = {x: 0, y: 0};
+        }
         
         if(gameController) {
             gameController.abort();
