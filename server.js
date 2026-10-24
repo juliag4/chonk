@@ -17,7 +17,7 @@ const io = new Server(server, {
         origin: "https://chonk-online.onrender.com",
         methods: ["GET", "POST"],
         credentials: true
-    }
+    },
     allowEIO3: true
 });
 
