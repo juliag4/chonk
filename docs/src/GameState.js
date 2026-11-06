@@ -19,10 +19,9 @@ export default class GameState{
         this.minFontSize = 8;
     };
     
-    updateState(players, foodCollection){
+    updateState(players){
         this.players = players;
-        this.foodCollection = foodCollection;
-    }
+    };
     
     addPlayer(id){
         const positionMultiplier = (this.mapWidth - this.initialPlayerRadius -
@@ -33,18 +32,18 @@ export default class GameState{
         const textColor = this.getTextColor(color);
         
         this.players[String(id)] = new Player(String(id), xPos, yPos, this.initialPlayerRadius, color, textColor);
-    }
+    };
     
     deletePlayer(id){
         delete this.players[String(id)];
-    }
+    };
     
     getRandomRGB(){
       const r = Math.floor(Math.random() * 256);
       const g = Math.floor(Math.random() * 256);
       const b = Math.floor(Math.random() * 256);
       return `rgb(${r}, ${g}, ${b})`;
-    }
+    };
     
     getTextColor(color){
         // regex matches any digit one or more times for all instances
@@ -56,11 +55,11 @@ export default class GameState{
 
         // if color is bright, use black text. otherwise use white text
         return yiq >= 128 ? '#000000' : '#ffffff';
-    }
+    };
     
     getPlayerId(){
         return this.players[this.playerId] || null;
-    }
+    };
         
     generateFoodCollection(){
         this.foodCollection = new FoodCollection();
@@ -69,7 +68,7 @@ export default class GameState{
             const xPos = Math.floor(Math.random() * (positionMultiplier)) + this.foodRadius + this.borderThickness;
             const yPos = Math.floor(Math.random() * (positionMultiplier)) + this.foodRadius + this.borderThickness;
             const color = this.getRandomRGB();
-            this.foodCollection.addFood(xPos, yPos, this.foodRadius, color);
+            this.foodCollection.addFood(i, xPos, yPos, this.foodRadius, color);
         }
-    }
+    };
 };

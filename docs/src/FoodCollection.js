@@ -5,7 +5,7 @@ export default class FoodCollection {
         this.foods = [];
     }
     
-    addFood(x, y, radius, color){
-        this.foods.push(new Food(x, y, radius, color));
+    addFood(id, x, y, radius, color){
+        this.foods.push(new Food(id, x, y, radius, color));
     }
 }

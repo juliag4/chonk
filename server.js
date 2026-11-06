@@ -30,6 +30,9 @@ server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}
 let gamestate = new GameState();
 gamestate.generateFoodCollection();
 
+// Initial Foods
+const foodArray = gamestate.foodCollection.foods;
+
 // Function to reduce redundancy
 const getPlayer = (socketId) => gamestate.players[socketId];
 
@@ -43,7 +46,7 @@ function startServerInterval() {
     if(serverGameLoop === null) {
         console.log('Starting the global game loop...');
         serverGameLoop = setInterval(() => {
-            io.emit('state', {players: gamestate.players, food: gamestate.foodCollection});
+            io.emit('state', { players: gamestate.players });
         }, 50);
     }
 }
@@ -62,10 +65,6 @@ io.on('connection', socket => {
     
     startServerInterval();
     
-//   Tell client what player number has connected
-//   socket.emit('player-number', playerIndex);
-//    console.log(`Player ${playerIndex} has connected`);
-    
     connections[playerIndex] = true;
     
     socket.on('join', (playerName) => {
@@ -79,18 +78,17 @@ io.on('connection', socket => {
             player.name = playerName.trim().substring(0, 15);
         }
         socket.emit('player-id', {id: socket.id});
-    });
-    
-    
-    /*socket.on('player-name', (playerName) => {
-        const player = getPlayer(socket.id);
-        if(!player) { return; }
         
-        if(playerName.trim().length > 0){
-            // Ensures player's name doesn't exceed 15 characters
-            player.name = playerName.trim().substring(0, 15);
-        }
-    });*/
+        const activeFood = foodArray.filter(f => !f.isConsumed);
+        socket.emit('initial-map-state', { food: activeFood });
+    });
+      
+    socket.on('eat-food', (data) => {
+        // Remove it from server memory array
+        gamestate.foodCollection.foods = gamestate.foodCollection.foods.filter(f => f.id !== data.foodId);
+        // Tell everyone to delete this food
+        io.emit('food-eaten', { id: data.id });
+    });
     
     socket.on('mouse-move', (mouseX, mouseY, canvasWidth, canvasHeight) => {
         const player = getPlayer(socket.id);
@@ -112,10 +110,6 @@ io.on('connection', socket => {
         
         player.targetRadius = playerInput.radius;
         player.radius = playerInput.radius;
-    });
-    
-    socket.on('food-update', (foodCollection) => {
-        gamestate.foodCollection = foodCollection;
     });
     
     socket.on('collision-update', (largePlayerId, smallPlayerId, smallPlayerArea) => {
@@ -170,8 +164,4 @@ io.on('connection', socket => {
         const allNull = connections.every(element => element === null);
         if(allNull){ gamestate.generateFoodCollection(); }
     });
-        
-    /*setInterval(() => {
-        socket.emit('state', {players: gamestate.players, food: gamestate.foodCollection, id: socket.id});
-    }, 50);*/
 });

@@ -103,32 +103,29 @@ export default class Game extends HTMLElement{
                 
         socket.emit('join', document.querySelector('.username').value);
         
-        //socket.emit('player-name', document.querySelector('.username').value);
 
-        
-        // Get your player number
-        /*socket.on('player-number', num => {
-            console.log('player-number socket');
-            if(num === -1){
-                console.log('Sorry the server is full');
-            }else{
-                playerNum = parseInt(num);
-                socket.emit('join');
-                console.log(`Player number ${num} has connected or disconnected`);
-                
-                socket.emit('player-name', document.querySelector('.username').value);
-            }
-        });*/
+        socket.off('initial-map-state');
         socket.off('state');
         socket.off('player-id');
+        
+        socket.on('initial-map-state', ({food}) => {
+            this.gameState.foodCollection.foods = food;
+        });
                 
-        socket.on('state', ({players, food}) => {
-            this.gameState.updateState(players, food);
+        socket.on('state', ({players}) => {
+            this.gameState.updateState(players);
         });
         
         socket.on('player-id', ({id}) => {
             console.log('got the player id');
             this.gameState.playerId = String(id);
+        });
+                  
+        socket.on('food-eaten', ({id}) => {
+            if(this.gameState.foodCollection.length !== 0){
+                const index = this.gameState.foodCollection.foods.findIndex(food => food.id === id);
+                this.gameState.foodCollection.foods[index].isConsumed = true;
+            }
         });
                 
         // Event listeners that will emit events so the gamestate object in the server is updated
@@ -145,8 +142,8 @@ export default class Game extends HTMLElement{
             socket.emit('player-radius-update', this.gameState.players[e.detail.id], e.detail.id);
         }, { signal });
         
-        this.addEventListener('foodUpdate', () => {
-            socket.emit('food-update', this.gameState.foodCollection);
+        this.addEventListener('eatFood', (e) => {
+            socket.emit('eat-food', e.detail.food);
         }, { signal });
         
         this.addEventListener('fullPlayerOverlap', (e) => {
@@ -160,7 +157,7 @@ export default class Game extends HTMLElement{
         ascendingPlayerIds.length = 0;
         playerStates.length = 0;
         
-        if(!this.gameState || !this.gameState.players) {
+        if(!this.gameState || !this.gameState.players || !this.gameState.foodCollection.foods) {
             requestAnimationFrame(this.gameUpdate);
             return;
         }
@@ -206,7 +203,11 @@ export default class Game extends HTMLElement{
                     if(foodIsConsumed){
                         this.gameState.foodCollection.foods[index].isConsumed = true;
                         // Dispatches event so the food collection in server is updated
-                        this.dispatchEvent(new Event('foodUpdate', { bubbles: true }));
+                        const eatFoodEvent = new CustomEvent('eatFood', {
+                            bubbles: true,
+                            detail: { food: food }
+                        });
+                        this.dispatchEvent(eatFoodEvent);
                         // Calculates new player area and then updates player radius if changed
                         this.updatePlayerRadius(player, food.area);
                     }
